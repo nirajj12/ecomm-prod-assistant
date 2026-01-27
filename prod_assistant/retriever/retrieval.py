@@ -12,7 +12,7 @@ from evaluation.ragas_eval import evaluate_context_precision, evaluate_response_
 
 class Retriever:
     def __init__(self):
-        """_summary_
+        """_summary___
         """
         self.model_loader=ModelLoader()
         self.config=load_config()
