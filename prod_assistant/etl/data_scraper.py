@@ -13,6 +13,9 @@ class FlipkartScraper:
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
 
+        if not hasattr(uc.ChromeOptions, "headless"):
+            uc.ChromeOptions.headless = False
+
     def get_top_reviews(self,product_url,count=2):
         """Get the top reviews for a product.
         """
