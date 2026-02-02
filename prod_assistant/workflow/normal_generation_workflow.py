@@ -72,27 +72,27 @@ def invoke_chain(query: str, debug: bool = False):
 if __name__=='__main__':
     user_query = "Can you suggest good budget iPhone under 1,00,000 INR?"
      
-    retriever_obj = Retriever()
+    #retriever_obj = Retriever()
     
-    retrieved_docs = retriever_obj.call_retriever(user_query)
+    #retrieved_docs = retriever_obj.call_retriever(user_query)
     
-    def _format_docs(docs) -> str:
-        if not docs:
-            return "No relevant documents found."
-        formatted_chunks = []
-        for d in docs:
-            print(d)
-            meta = d.metadata or {}
-            formatted = (
-                f"Title: {meta.get('product_title', 'N/A')}\n"
-                f"Price: {meta.get('price', 'N/A')}\n"
-                f"Rating: {meta.get('rating', 'N/A')}\n"
-                f"Reviews:\n{d.page_content.strip()}"
-            )
-            formatted_chunks.append(formatted)
-        return "\n\n---\n\n".join(formatted_chunks)
+    # def _format_docs(docs) -> str:
+    #     if not docs:
+    #         return "No relevant documents found."
+    #     formatted_chunks = []
+    #     for d in docs:
+    #         print(d)
+    #         meta = d.metadata or {}
+    #         formatted = (
+    #             f"Title: {meta.get('product_title', 'N/A')}\n"
+    #             f"Price: {meta.get('price', 'N/A')}\n"
+    #             f"Rating: {meta.get('rating', 'N/A')}\n"
+    #             f"Reviews:\n{d.page_content.strip()}"
+    #         )
+    #         formatted_chunks.append(formatted)
+    #     return "\n\n---\n\n".join(formatted_chunks)
     
-    retrieved_contexts = [_format_docs(doc) for doc in retrieved_docs]
+    # retrieved_contexts = [_format_docs(doc) for doc in retrieved_docs]
     
     retrieved_contexts,response = invoke_chain(user_query)
     
