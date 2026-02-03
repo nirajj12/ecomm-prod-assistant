@@ -20,9 +20,11 @@ class FlipkartScraper:
         """Get the top reviews for a product.
         """
         options = uc.ChromeOptions()
+        options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-blink-features=AutomationControlled")
-        driver = uc.Chrome(options=options,use_subprocess=True)
+        driver = uc.Chrome(options=options,version_main=144,use_subprocess=True)
 
         if not product_url.startswith("http"):
             driver.quit()
