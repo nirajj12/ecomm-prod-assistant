@@ -1,7 +1,12 @@
 import os
+import sys
+sys.path.insert(0, '/Users/nirajmac/Documents/ecomm-prod-assistant')
 from mcp.server.fastmcp import FastMCP
 from prod_assistant.retriever.retrieval import Retriever  
 from langchain_community.tools import DuckDuckGoSearchRun
+
+from prod_assistant.utils import runtime
+
 
 # Initialize MCP server
 mcp = FastMCP("hybrid_search")
@@ -54,4 +59,4 @@ async def web_search(query: str) -> str:
 # ---------- Run Server ----------
 if __name__ == "__main__":
     #mcp.run(transport="stdio")
-    mcp.run(transport="streamable-http")
+    mcp.run(transport="stdio")

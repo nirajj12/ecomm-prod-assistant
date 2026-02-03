@@ -6,7 +6,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(PROJECT_ROOT / ".env")
 from prod_assistant.utils.config_loader import load_config
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_google_genai import  ChatGoogleGenerativeAI
 # from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
