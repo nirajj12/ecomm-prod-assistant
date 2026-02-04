@@ -21,10 +21,16 @@ class FlipkartScraper:
         """
         options = uc.ChromeOptions()
         options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-
         options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--disable-software-rasterizer")
+        options.add_argument("--no-first-run")
+        options.add_argument("--no-default-browser-check")
+        options.add_argument("--remote-debugging-port=0")
+
         options.add_argument("--disable-blink-features=AutomationControlled")
-        driver = uc.Chrome(options=options,version_main=144,use_subprocess=True)
+        driver = uc.Chrome(options=options,  use_subprocess=False, headless=False)
 
         if not product_url.startswith("http"):
             driver.quit()
@@ -44,17 +50,20 @@ class FlipkartScraper:
                 time.sleep(1.5)
 
             soup = BeautifulSoup(driver.page_source, "html.parser")
-            review_blocks = soup.select("div._27M-vq, div.col.EPCmJX, div._6K-7Co")
+            headlines = soup.select("p.qW2QI1, p._2-N8zT, p._2xg6Ul")
+            bodies = soup.select("div.G4PxIA, div._6K-7Co, div._27M-vq, div.t-ZTKy, div.col.EPCmJX")
+
             seen = set()
             reviews = []
 
-            for block in review_blocks:
-                text = block.get_text(separator=" ", strip=True)
+            for h, b in zip(headlines, bodies):
+                text = f"{h.get_text(strip=True)} — {b.get_text(' ', strip=True)}"
                 if text and text not in seen:
                     reviews.append(text)
                     seen.add(text)
                 if len(reviews) >= count:
                     break
+
         except Exception:
             reviews = []
 
@@ -65,42 +74,69 @@ class FlipkartScraper:
         """Scrape Flipkart products based on a search query.
         """
         options = uc.ChromeOptions()
-        driver = uc.Chrome(options=options,use_subprocess=True)
-        search_url = f"https://www.flipkart.com/search?q={query.replace(' ', '+')}"
-        driver.get(search_url)
-        time.sleep(4)
+        options.binary_location = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--disable-software-rasterizer")
+        options.add_argument("--no-first-run")
+        options.add_argument("--no-default-browser-check")
+        options.add_argument("--remote-debugging-port=0")
+
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        driver = uc.Chrome(options=options,  use_subprocess=False, headless=False)
+        time.sleep(2)
 
         try:
-            driver.find_element(By.XPATH, "//button[contains(text(), '✕')]").click()
-        except Exception as e:
-            print(f"Error occurred while closing popup: {e}")
+            search_url = f"https://www.flipkart.com/search?q={query.replace(' ', '+')}"
+            driver.get(search_url)
+            time.sleep(5)
 
-        time.sleep(2)
-        products = []
-
-        items = driver.find_elements(By.CSS_SELECTOR, "div[data-id]")[:max_products]
-        for item in items:
             try:
-                title = item.find_element(By.CSS_SELECTOR, "div.KzDlHZ").text.strip()
-                price = item.find_element(By.CSS_SELECTOR, "div.Nx9bqj").text.strip()
-                rating = item.find_element(By.CSS_SELECTOR, "div.XQDdHH").text.strip()
-                reviews_text = item.find_element(By.CSS_SELECTOR, "span.Wphh3N").text.strip()
-                match = re.search(r"\d+(,\d+)?(?=\s+Reviews)", reviews_text)
-                total_reviews = match.group(0) if match else "N/A"
-
-                link_el = item.find_element(By.CSS_SELECTOR, "a[href*='/p/']")
-                href = link_el.get_attribute("href")
-                product_link = href if href.startswith("http") else "https://www.flipkart.com" + href
-                match = re.findall(r"/p/(itm[0-9A-Za-z]+)", href)
-                product_id = match[0] if match else "N/A"
+                driver.find_element(By.XPATH, "//button[contains(text(), '✕')]").click()
             except Exception as e:
-                print(f"Error occurred while processing item: {e}")
-                continue
+                print(f"Error occurred while closing popup: {e}")
 
-            top_reviews = self.get_top_reviews(product_link, count=review_count) if "flipkart.com" in product_link else "Invalid product URL"
-            products.append([product_id, title, rating, total_reviews, price, top_reviews])
+            time.sleep(2)
+            products = []
 
-        driver.quit()
+            items = driver.find_elements(By.CSS_SELECTOR, "div[data-id]")[:max_products]
+            print("FOUND ITEMS:", len(items))
+            # if items:
+            #     print(items[0].get_attribute("outerHTML"))
+
+
+            for item in items:
+                def safe_text(el, selector):
+                    try:
+                        return el.find_element(By.CSS_SELECTOR, selector).text.strip()
+                    except Exception:
+                        return "N/A"
+
+                title = safe_text(item, "div.RG5Slk")
+                price = safe_text(item, "div.hZ3P6w")
+                rating = safe_text(item, "div.MKiFS6")
+                reviews_text = safe_text(item, "span.PvbNMB")
+
+
+                match = re.search(r"([\d,]+)\s+Reviews", reviews_text)
+                total_reviews = match.group(1) if match else "N/A"
+
+
+                try:
+                    link_el = item.find_element(By.CSS_SELECTOR, "a.k7wcnx")
+                    href = link_el.get_attribute("href")
+                    product_link = href if href.startswith("http") else "https://www.flipkart.com" + href
+                    match = re.findall(r"/p/(itm[0-9A-Za-z]+)", href)
+                    product_id = match[0] if match else "N/A"
+                except Exception as e:
+                    print(f"Error occurred while extracting product link: {e}")
+                    continue
+
+                top_reviews = self.get_top_reviews(product_link, count=review_count) if "flipkart.com" in product_link else "Invalid product URL"
+                products.append([product_id, title, rating, total_reviews, price, top_reviews])
+        finally:
+            driver.quit()
         return products
     
     def save_to_csv(self, data, filename="product_reviews.csv"):
