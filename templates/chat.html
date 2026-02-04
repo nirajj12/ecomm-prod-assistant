@@ -5,93 +5,41 @@
     <title>ShopBuddy</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-
-        /* Floating Chat Icon */
-        .chatbot-icon {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background-color: #007bff;
-            color: white;
-            border-radius: 50%;
-            padding: 15px;
-            cursor: pointer;
-            z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-
-        .chat-popup {
-            position: fixed;
-            bottom: 90px;
-            right: 30px;
-            width: 350px;
-            max-height: 500px;
-            display: none;
-            z-index: 1001;
-        }
-
-        .chat .card {
-            border-radius: 15px;
-        }
-
-        .msg_cotainer_send, .msg_cotainer {
-            background-color: #f1f1f1;
-            border-radius: 10px;
-            padding: 10px;
-            margin-top: 5px;
-        }
-
-        .msg_time, .msg_time_send {
-            font-size: 10px;
-            color: gray;
-        }
-
-        .user_img_msg {
-            width: 30px;
-            height: 30px;
-            margin-left: 5px;
-        }
-
-        /* Static Content Styling */
-        .hero {
-            padding: 50px;
-            text-align: center;
-            background: #f8f9fa;
-        }
-
-        .hero h1 {
-            font-size: 40px;
-            margin-bottom: 20px;
-        }
-
-        .hero p {
-            font-size: 18px;
-        }
-
-        .footer {
-            position: relative;
-            bottom: 0;
-            width: 100%;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-
-
-    </style>
 </head>
 <body>
-
-    <div class="hero d-flex flex-column align-items-center justify-content-center text-center" style="height: 90vh; background: linear-gradient(to right, #eef2f3, #8e9eab); animation: fadeIn 1s ease-out;">
-        <h1 class="display-3 font-weight-bold mb-3 gradient-text">Welcome to ShopBuddy</h1>
-        <p class="lead mb-4 text-dark">Your Smart Shopping Companion – Ask about prices, offers, reviews & more!</p>
-        <img src="/static/f6634145-b9d9-4ea1-b5e5-cb705192c6fd.png" alt="ShopBuddy Assistant" class="img-fluid shadow-lg" style="max-width: 300px; border-radius: 20px; transform: scale(1); transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+    <div class="page-bg">
+        <div class="glow-orb orb-one"></div>
+        <div class="glow-orb orb-two"></div>
+        <div class="glow-orb orb-three"></div>
     </div>
+
+    <main class="hero">
+        <div class="hero-badge">
+            <i class="fas fa-star"></i>
+            <span>AI-Powered Shopping Assistant</span>
+        </div>
+        <h1 class="hero-title">
+            Welcome to <span class="hero-title-accent">ShopBuddy</span>
+        </h1>
+        <p class="hero-subtitle">
+            Your Smart Shopping Companion — Ask about prices, offers, reviews & more!
+        </p>
+        <div class="hero-pills">
+            <div class="pill"><i class="far fa-clipboard"></i>Product Queries</div>
+            <div class="pill"><i class="far fa-star"></i>Reviews</div>
+            <div class="pill"><i class="fas fa-bolt"></i>Price Comparison</div>
+            <div class="pill"><i class="fas fa-tag"></i>Best Offers</div>
+        </div>
+        <div class="hero-hint">
+            <i class="far fa-comment-alt"></i>
+            <span>Click the chat button below to start a conversation</span>
+        </div>
+    </main>
 
 
 
@@ -102,8 +50,8 @@
 
     <!-- Chatbot Popup -->
     <div class="chat-popup" id="chatPopup">
-        <div class="card">
-            <div class="card-header msg_head">
+        <div class="card chat-card">
+            <div class="card-header msg_head chat-header">
                 <div class="d-flex bd-highlight">
                     <div class="img_cont">
                         <img src="https://static.vecteezy.com/system/resources/previews/016/017/018/non_2x/ecommerce-icon-free-png.png" class="rounded-circle user_img" width="40">
@@ -117,8 +65,8 @@
                     </div>
                 </div>
             </div>
-            <div id="messageFormeight" class="card-body msg_card_body" style="overflow-y: auto; height: 300px;"></div>
-            <div class="card-footer">
+            <div id="messageFormeight" class="card-body msg_card_body"></div>
+            <div class="card-footer chat-input">
                 <form id="messageArea" class="input-group">
                     <input type="text" id="text" name="msg" placeholder="Type message..." class="form-control type_msg" required>
                     <div class="input-group-append">
@@ -182,10 +130,10 @@
         });
     </script>
     <!-- 👇 Add this just before </body> -->
-    <footer class="footer mt-auto py-3 bg-dark text-white text-center">
-        <div class="container">
-            <p class="mb-1">© 2025 Customer Support System</p>
-            <p class="mb-0">Need help? <a href="mailto:support@example.com" class="text-warning">support@example.com</a></p>
+    <footer class="footer">
+        <div class="footer-inner">
+            <p>© 2025 Customer Support System</p>
+            <p>Need help? <a href="mailto:support@example.com">support@example.com</a></p>
         </div>
     </footer>
 

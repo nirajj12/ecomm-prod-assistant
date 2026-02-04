@@ -6,9 +6,10 @@ from dotenv import load_dotenv
 from langchain.retrievers.document_compressors import LLMChainFilter
 from langchain.retrievers import ContextualCompressionRetriever
 from evaluation.ragas_eval import evaluate_context_precision, evaluate_response_relevancy
-# Add the project root to the Python path for direct script execution
-# project_root = Path(__file__).resolve().parents[2]
-# sys.path.insert(0, str(project_root))
+import sys
+from pathlib import Path
+project_root = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(project_root))
 
 class Retriever:
     def __init__(self):
@@ -23,7 +24,7 @@ class Retriever:
     def _load_env_variables(self):
         """_summary_
         """
-        load_dotenv()
+        load_dotenv(project_root / ".env")
          
         required_vars = [ "ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_KEYSPACE"]
         
@@ -115,8 +116,3 @@ if __name__=='__main__':
     print("Response Relevancy Score:", relevancy_score)
     
 
-    
-    
-    
-    # for idx, doc in enumerate(results, 1):
-    #     print(f"Result {idx}: {doc.page_content}\nMetadata: {doc.metadata}\n")
