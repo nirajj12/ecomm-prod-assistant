@@ -12,6 +12,7 @@ from utils.model_loader import ModelLoader
 from evaluation.ragas_eval import evaluate_context_precision, evaluate_response_relevancy
 from langchain_mcp_adapters.client import MultiServerMCPClient
 import asyncio
+import os
 
 class AgenticRAG:
     """Agentic RAG pipeline using LangGraph + MCP (Retriever + WebSearch)."""
@@ -27,53 +28,87 @@ class AgenticRAG:
         self.checkpointer = MemorySaver()
 
         # Initialize MCP client
+        mcp_url = os.getenv("MCP_URL", "http://mcp-server:8001/mcp")
         self.mcp_client = MultiServerMCPClient(
             {
                 "hybrid_search": {
                     "transport": "streamable_http",
-                    "url": "http://localhost:8000/mcp"
+                    "url": mcp_url
                 }
             }
         )
+        self.mcp_tools: list = []
 
         # Build workflow
         self.workflow = self._build_workflow()
         self.app = self.workflow.compile(checkpointer=self.checkpointer)
 
-        # Load MCP tools asynchronously
-        asyncio.run(self._safe_async_init())
+        async def _ensure_mcp_tools(self):
+            if not self.mcp_tools:
+                self.mcp_tools = await self.mcp_client.get_tools()
+                print("MCP tools loaded:", [t.name for t in self.mcp_tools])
 
-    async def async_init(self):
-        """Load MCP tools asynchronously."""
-        self.mcp_tools = await self.mcp_client.get_tools()
+    # async def async_init(self):
+    #     """Load MCP tools asynchronously."""
+    #     self.mcp_tools = await self.mcp_client.get_tools()
 
-    async def _safe_async_init(self):
-        """Safe async init wrapper (prevents event loop crash)."""
-        try:
-            self.mcp_tools = await self.mcp_client.get_tools()
-            print("MCP tools loaded successfully.")
-        except Exception as e:
-            print(f"Warning: Failed to load MCP tools — {e}")
-            self.mcp_tools = []
+    # async def _safe_async_init(self):
+    #     """Safe async init wrapper (prevents event loop crash)."""
+    #     try:
+    #         self.mcp_tools = await self.mcp_client.get_tools()
+    #         print("MCP tools loaded successfully.")
+    #     except Exception as e:
+    #         print(f"Warning: Failed to load MCP tools — {e}")
+    #         self.mcp_tools = []
 
     # ---------- Nodes ----------
     def _ai_assistant(self, state: AgentState):
         print("--- CALL ASSISTANT ---")
         messages = state["messages"]
-        last_message = messages[-1].content
+        last_message = messages[-1].content.strip().lower()
 
-        if any(word in last_message.lower() for word in ["price", "review", "product"]):
+        ecommerce_keywords = [
+            "price", "buy", "cost", "review", "rating",
+            "product", "iphone", "samsung", "laptop",
+            "mobile", "phone", "tablet", "tv", "camera",
+            "compare", "best", "budget"
+        ]
+
+        greeting_keywords = [
+            "hi", "hello", "hey", "hii", "hiii",
+            "good morning", "good evening", "good afternoon",
+            "what can you do", "help", "who are you"
+        ]
+
+        if any(word in last_message for word in ecommerce_keywords):
             return {"messages": [HumanMessage(content="TOOL: retriever")]}
-        else:
+
+        elif any(greet in last_message for greet in greeting_keywords):
             prompt = ChatPromptTemplate.from_template(
-                "You are a helpful assistant. Answer the user directly.\n\nQuestion: {question}\nAnswer:"
+                "You are a polite and friendly ecommerce product assistant.\n"
+                "Briefly introduce yourself and explain how you can help.\n\n"
+                "User: {question}\nAssistant:"
             )
             chain = prompt | self.llm | StrOutputParser()
-            response = chain.invoke({"question": last_message}) or "I'm not sure about that."
+            response = chain.invoke(
+                {"question": last_message}
+            ) or (
+                "Hi 👋 I’m your ecommerce product assistant. "
+                "I can help you with product prices, reviews, comparisons, "
+                "and recommendations. Just ask about any product!"
+            )
             return {"messages": [HumanMessage(content=response)]}
+
+        else:
+            return {"messages": [HumanMessage(content=(
+                            "I’m designed to help only with ecommerce products — "
+                            "including prices, reviews, comparisons, and recommendations. "
+                            "Please ask a product-related question."
+                        ))]}
 
     async def _vector_retriever(self, state: AgentState):
         print("--- RETRIEVER (MCP) ---")
+        await self._ensure_mcp_tools()
         query = state["messages"][-1].content
 
         tool = next((t for t in self.mcp_tools if t.name == "get_product_info"), None)
@@ -90,8 +125,17 @@ class AgenticRAG:
 
     async def _web_search(self, state: AgentState):
         print("--- WEB SEARCH (MCP) ---")
+        await self._ensure_mcp_tools()
         query = state["messages"][-1].content
-        tool = next(t for t in self.mcp_tools if t.name == "web_search")
+        forbidden_terms = ["launch", "rumor", "leak", "expected", "upcoming", "2026", "2027"]
+        if any(term in query.lower() for term in forbidden_terms):
+            return {"messages": [HumanMessage(
+                        content="This product information is not available in our catalog."
+                    )]}
+        tool = next((t for t in self.mcp_tools if t.name == "web_search"), None)
+        if not tool:
+            return {"messages": [HumanMessage(content="Web search tool not found in MCP client.")]}
+
         result = await tool.ainvoke({"query": query})  # ✅
         context = result if result else "No data from web"
         return {"messages": [HumanMessage(content=context)]}
@@ -102,14 +146,17 @@ class AgenticRAG:
         question = state["messages"][0].content
         docs = state["messages"][-1].content
 
+        if docs and "No local results found" not in docs and len(docs) > 100:
+            return "generator"
+
         prompt = PromptTemplate(
             template="""You are a grader. Question: {question}\nDocs: {docs}\n
-            Are docs relevant to the question? Answer yes or no.""",
+            Are the docs completely irrelevant to answering the question? Answer yes or no.""",
             input_variables=["question", "docs"],
         )
         chain = prompt | self.llm | StrOutputParser()
         score = chain.invoke({"question": question, "docs": docs}) or ""
-        return "generator" if "yes" in score.lower() else "rewriter"
+        return "rewriter" if "yes" in score.lower() else "generator"
 
     def _generate(self, state: AgentState):
         print("--- GENERATE ---")

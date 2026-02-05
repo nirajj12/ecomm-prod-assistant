@@ -6,11 +6,8 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 async def main():
     client = MultiServerMCPClient({
         "hybrid_search": {   # server name
-            "command": "python",
-            "args": [
-                r"/Users/nirajmac/Documents/ecomm-prod-assistant/prod_assistant/mcp_servers/product_search_saver.py"
-            ],  # absolute path
-            "transport": "stdio",
+            "transport": "streamable_http",
+            "url": "http://127.0.0.1:8001/mcp"
         }
     })
 
@@ -22,9 +19,6 @@ async def main():
     retriever_tool = next(t for t in tools if t.name == "get_product_info")
     web_tool = next(t for t in tools if t.name == "web_search")
 
-    # --- Step 1: Try retriever first ---
-    #query = "Samsung Galaxy S25 price"
-    # query = "iPhone 15"
     query = "iPhone 17?"
     retriever_result = await retriever_tool.ainvoke({"query": query})
     print("\nRetriever Result:\n", retriever_result)

@@ -3,7 +3,7 @@ import sys
 import json
 from dotenv import load_dotenv
 from pathlib import Path
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(PROJECT_ROOT / ".env")
 from prod_assistant.utils.config_loader import load_config
 from langchain_huggingface import HuggingFaceEmbeddings
