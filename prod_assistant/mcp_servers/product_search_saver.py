@@ -52,4 +52,4 @@ async def web_search(query: str) -> str:
 
 # ---------- Run Server ----------
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http",host="127.0.0.1",port=8001)
+    mcp.run(transport="streamable-http")

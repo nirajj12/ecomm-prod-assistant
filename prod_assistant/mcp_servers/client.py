@@ -6,8 +6,11 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 async def main():
     client = MultiServerMCPClient({
         "hybrid_search": {   # server name
-            "transport": "streamable_http",
-            "url": "http://127.0.0.1:8001/mcp"
+            "command": "python",
+            "args": [
+                r"prod_assistant/mcp_servers/product_search_saver.py"
+            ],  
+            "transport": "streamable-http",
         }
     })
 

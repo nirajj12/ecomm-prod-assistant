@@ -19,14 +19,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-rag_agent = AgenticRAG()
+
 # ---------- FastAPI Endpoints ----------
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("chat.html", {"request": request})
 
 
-
 @app.post("/get")
 async def chat(msg: str = Form(...)):
-    return await rag_agent.run(msg)
+    rag_agent = AgenticRAG()
+    answer = await rag_agent.run(msg)
+    return answer
