@@ -30,7 +30,7 @@ class AgenticRAG:
         self.mcp_client = MultiServerMCPClient(
             {
                 "hybrid_search": {
-                    "transport": "streamable_http",
+                    "transport": "streamable-http",
                     "url": "http://localhost:8000/mcp"
                 }
             }
@@ -51,7 +51,7 @@ class AgenticRAG:
         """Safe async init wrapper (prevents event loop crash)."""
         try:
             self.mcp_tools = await self.mcp_client.get_tools()
-            print("MCP tools loaded successfully.")
+            print("MCP tools loaded successfully:", [t.name for t in self.mcp_tools])
         except Exception as e:
             print(f"Warning: Failed to load MCP tools — {e}")
             self.mcp_tools = []
@@ -62,11 +62,27 @@ class AgenticRAG:
         messages = state["messages"]
         last_message = messages[-1].content
 
-        if any(word in last_message.lower() for word in ["price", "review", "product"]):
+        if any(word in last_message.lower() for word in ["price", "review", "product","phone","laptop","budget","iphone","samsung","oneplus"]):
             return {"messages": [HumanMessage(content="TOOL: retriever")]}
         else:
             prompt = ChatPromptTemplate.from_template(
-                "You are a helpful assistant. Answer the user directly.\n\nQuestion: {question}\nAnswer:"
+                """You are ShopBuddy, an AI-powered shopping assistant. Answer the user directly.Your behavior rules:
+                ROLE & BEHAVIOR:
+                - Help users with shopping-related queries such as product prices, reviews, comparisons, and best offers.
+                - Provide clear, concise, and practical buying guidance.
+                - If the user asks what you can do, briefly explain your shopping assistance capabilities.
+                - If the user greets you, respond politely and calmly.
+                - For questions outside ecommerce, gently steer the conversation back to product-related topics without mentioning limitations or refusals.
+                - Do not answer questions from unrelated domains like math, politics, coding, or general knowledge.
+
+                OUTPUT RULES:
+                - Respond in plain text only.
+                - Do NOT use tables, markdown, headings, or bullet lists.
+                - Keep responses short and easy to understand (maximum 3–4 sentences).
+                - Maintain a friendly, professional shopping-assistant tone.
+
+
+                \n\nQuestion: {question}\nAnswer:"""
             )
             chain = prompt | self.llm | StrOutputParser()
             response = chain.invoke({"question": last_message}) or "I'm not sure about that."
@@ -91,9 +107,14 @@ class AgenticRAG:
     async def _web_search(self, state: AgentState):
         print("--- WEB SEARCH (MCP) ---")
         query = state["messages"][-1].content
-        tool = next(t for t in self.mcp_tools if t.name == "web_search")
-        result = await tool.ainvoke({"query": query})  # ✅
-        context = result if result else "No data from web"
+        tool = next((t for t in self.mcp_tools if t.name == "web_search"), None)
+        if not tool:
+            return {"messages": [HumanMessage(content="Web search tool not found in MCP client.")]}
+        try:
+            result = await tool.ainvoke({"query": query})
+            context = result if result else "No data from web"
+        except Exception as e:
+            context = f"Error invoking web search: {e}"
         return {"messages": [HumanMessage(content=context)]}
 
 
