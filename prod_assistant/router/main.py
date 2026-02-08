@@ -21,6 +21,20 @@ app.add_middleware(
 )
 
 # ---------- FastAPI Endpoints ----------
+
+@app.get("/status")
+def status():
+    return {
+        "status": "LIVE",
+        "project": "E-commerce Product Assistant",
+        "message": "Backend is running on AWS EKS"
+    }
+
+@app.get("/health")
+def health():
+    return {"ok": True}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("chat.html", {"request": request})
