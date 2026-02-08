@@ -47,9 +47,15 @@ jobs:
           REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
-          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
-          docker push $REGISTRY/$REPOSITORY:latest
+          set -e
+          echo "Building image..."
+          docker build \
+            -t "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}" \
+            -t "${REGISTRY}/${REPOSITORY}:latest" \
+            .
+          echo "Pushing image..."
+          docker push "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}"
+          docker push "${REGISTRY}/${REPOSITORY}:latest"
 
 
       # Setup kubectl
