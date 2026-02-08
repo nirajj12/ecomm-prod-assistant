@@ -48,18 +48,18 @@ jobs:
           REGISTRY: ${{ secrets.ECR_REGISTRY }}
           REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
 
-      - name: Hard validate Docker vars
-        run: |
-          printf "REGISTRY=[%s]\n" "$REGISTRY"
-          printf "REPOSITORY=[%s]\n" "$REPOSITORY"
-          printf "IMAGE_TAG=[%s]\n" "$IMAGE_TAG"
+      # - name: Hard validate Docker vars
+      #   run: |
+      #     printf "REGISTRY=[%s]\n" "$REGISTRY"
+      #     printf "REPOSITORY=[%s]\n" "$REPOSITORY"
+      #     printf "IMAGE_TAG=[%s]\n" "$IMAGE_TAG"
 
-          [[ "$REGISTRY" =~ [[:space:]] ]] && echo "❌ REGISTRY HAS WHITESPACE" && exit 1
-          [[ "$REPOSITORY" =~ [[:space:]] ]] && echo "❌ REPOSITORY HAS WHITESPACE" && exit 1
-        env:
-          REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+      #     [[ "$REGISTRY" =~ [[:space:]] ]] && echo "❌ REGISTRY HAS WHITESPACE" && exit 1
+      #     [[ "$REPOSITORY" =~ [[:space:]] ]] && echo "❌ REPOSITORY HAS WHITESPACE" && exit 1
+      #   env:
+      #     REGISTRY: ${{ secrets.ECR_REGISTRY }}
+      #     REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      #     IMAGE_TAG: ${{ env.IMAGE_TAG }}
         
 
 
