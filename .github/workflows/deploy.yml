@@ -38,6 +38,15 @@ jobs:
       - name: Set Image Tag
         run: echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
 
+      - name: Sanitize Docker vars
+        run: |
+          REGISTRY="$(echo "$REGISTRY" | tr -d '[:space:]')"
+          REPOSITORY="$(echo "$REPOSITORY" | tr -d '[:space:]')"
+          echo "REGISTRY=$REGISTRY" >> $GITHUB_ENV
+          echo "REPOSITORY=$REPOSITORY" >> $GITHUB_ENV
+        env:
+          REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
 
       - name: Hard validate Docker vars
         run: |
