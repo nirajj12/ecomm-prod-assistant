@@ -6,6 +6,13 @@ metadata:
     app: product-assistant
 spec:
   replicas: 2   
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+
   selector:
     matchLabels:
       app: product-assistant
@@ -21,6 +28,14 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
+
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "300m"
+            memory: "512Mi"
 
         env:
         - name: GROQ_API_KEY
