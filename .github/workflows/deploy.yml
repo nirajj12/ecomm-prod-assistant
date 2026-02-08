@@ -36,21 +36,21 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Set Image Tag
-        id: image-tag
-        run: |
-          echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
-          echo "::set-output name=tag::$(date +%s)"
-      
+        run: echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
+
+
+
       # Build, tag and push Docker image to ECR
       - name: Build and Push Docker image
         env:
           REGISTRY: ${{ secrets.ECR_REGISTRY }}
           REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
           docker push $REGISTRY/$REPOSITORY:latest
+
 
       # Setup kubectl
       - name: Setup kubectl
@@ -111,10 +111,10 @@ jobs:
         env:
           REGISTRY: ${{ secrets.ECR_REGISTRY }}
           REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
         run: |
-          kubectl set image deployment/product-assistant product-assistant=$REGISTRY/$REPOSITORY:$IMAGE_TAG
-
+          kubectl set image deployment/product-assistant \
+            product-assistant=$REGISTRY/$REPOSITORY:$IMAGE_TAG
 
       # Verify rollout
       - name: Verify Deployment
