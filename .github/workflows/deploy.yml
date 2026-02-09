@@ -34,52 +34,18 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-        with:
-          mask-password: true
-
-      - name: Normalize ECR variables
-        id: ecr-vars
-        env:
-          REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-        run: |
-          REGISTRY="${REGISTRY:-}"
-          REPOSITORY="${REPOSITORY:-}"
-          if [[ "$REPOSITORY" == *"/"* ]]; then
-            REGISTRY_FROM_REPO="${REPOSITORY%%/*}"
-            REPO_NAME="${REPOSITORY##*/}"
-            if [[ -z "$REGISTRY" ]]; then
-              REGISTRY="$REGISTRY_FROM_REPO"
-            fi
-            REPOSITORY="$REPO_NAME"
-          fi
-          if [[ "$REGISTRY" == *"/"* ]]; then
-            REGISTRY="${REGISTRY%%/*}"
-          fi
-          echo "registry=$REGISTRY" >> "$GITHUB_OUTPUT"
-          echo "repository=$REPOSITORY" >> "$GITHUB_OUTPUT"
-
-      - name: Validate ECR repo exists
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          ECR_REPOSITORY: ${{ steps.ecr-vars.outputs.repository }}
-        run: |
-          aws sts get-caller-identity
-          aws ecr describe-repositories --region "$AWS_REGION" \
-            --repository-names "$ECR_REPOSITORY" \
-            --query "repositories[0].repositoryUri" --output text
 
       - name: Set Image Tag
         id: image-tag
         run: |
           echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
-          echo "tag=$(date +%s)" >> $GITHUB_OUTPUT
+          echo "::set-output name=tag::$(date +%s)"
       
       # Build, tag and push Docker image to ECR
       - name: Build and Push Docker image
         env:
-          REGISTRY: ${{ steps.ecr-vars.outputs.registry }}
-          REPOSITORY: ${{ steps.ecr-vars.outputs.repository }}
+          REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
@@ -135,21 +101,24 @@ jobs:
 
       # Deploy manifests
       - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8/deployment.yaml
+          kubectl apply -f k8/service.yaml
+
+      - name: Patch deployment with new image tag
         env:
-          REGISTRY: ${{ steps.ecr-vars.outputs.registry }}
-          REPOSITORY: ${{ steps.ecr-vars.outputs.repository }}
+          REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
-          IMAGE="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
-          sed "s|image:.*|image: $IMAGE|" k8/deployment.yaml | kubectl apply -f -
-          kubectl apply -f k8/service.yaml
+          kubectl set image deployment/product-assistant product-assistant=$REGISTRY/$REPOSITORY:$IMAGE_TAG
 
 
       # Verify rollout
       - name: Verify Deployment
         run: |
           set -e
-          if ! kubectl rollout status deployment/product-assistant --timeout=600s; then
+          if ! kubectl rollout status deployment/product-assistant --timeout=120s; then
             echo "Rollout failed, collecting debug info..."
             kubectl describe deployment product-assistant || true
             kubectl get pods -o wide || true

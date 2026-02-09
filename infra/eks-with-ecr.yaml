@@ -7,10 +7,10 @@ Parameters:
     Default: product-assistant-cluster-latest
   NodeInstanceType:
     Type: String
-    Default: t3.micro
+    Default: c7i-flex.large
   DesiredCapacity:
     Type: Number
-    Default: 1
+    Default: 2
   ECRRepositoryName:
     Type: String
     Default: product-assistant
@@ -168,7 +168,7 @@ Resources:
         - !Ref PublicSubnet2
       ScalingConfig:
         DesiredSize: !Ref DesiredCapacity
-        MaxSize: 1
+        MaxSize: 3
         MinSize: 1
       InstanceTypes:
         - !Ref NodeInstanceType
