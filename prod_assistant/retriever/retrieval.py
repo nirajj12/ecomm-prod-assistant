@@ -1,15 +1,14 @@
 import os
+from pathlib import Path
 from langchain_astradb import AstraDBVectorStore
-from utils.config_loader import load_config
-from utils.model_loader import ModelLoader
 from dotenv import load_dotenv
 from langchain.retrievers.document_compressors import LLMChainFilter
 from langchain.retrievers import ContextualCompressionRetriever
-from evaluation.ragas_eval import evaluate_context_precision, evaluate_response_relevancy
-import sys
-from pathlib import Path
-project_root = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(project_root))
+from prod_assistant.utils.config_loader import load_config
+from prod_assistant.utils.model_loader import ModelLoader
+from prod_assistant.evaluation.ragas_eval import evaluate_context_precision, evaluate_response_relevancy
+
+project_root = Path(__file__).resolve().parents[1]
 
 class Retriever:
     def __init__(self):
@@ -115,4 +114,3 @@ if __name__=='__main__':
     print("Context Precision Score:", context_score)
     print("Response Relevancy Score:", relevancy_score)
     
-
