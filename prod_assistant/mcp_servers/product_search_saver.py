@@ -1,3 +1,4 @@
+import os
 from mcp.server.fastmcp import FastMCP
 from prod_assistant.retriever.retrieval import Retriever
 from langchain_community.tools import DuckDuckGoSearchRun
@@ -52,4 +53,7 @@ async def web_search(query: str) -> str:
 
 # ---------- Run Server ----------
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    # Run MCP on a different port than the main FastAPI app to avoid conflicts.
+    port = int(os.getenv("MCP_PORT", "8001"))
+    host = os.getenv("MCP_HOST", "0.0.0.0")
+    mcp.run(transport="streamable-http", host=host, port=port)
