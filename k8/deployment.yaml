@@ -5,7 +5,7 @@ metadata:
   labels:
     app: product-assistant
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: product-assistant
@@ -19,6 +19,13 @@ spec:
         image: 476768693517.dkr.ecr.us-east-2.amazonaws.com/product-assistant:latest
         ports:
         - containerPort: 8000
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1024Mi"
         env:                              
         - name: OPENAI_API_KEY
           valueFrom:
@@ -51,3 +58,8 @@ spec:
           value: "8001"
         - name: MCP_SERVER_URL
           value: "http://127.0.0.1:8001/mcp"
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0

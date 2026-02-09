@@ -11,6 +11,7 @@ __pycache__/
 
 # Virtual environments
 venv/
+.venv/
 
 # Jupyter notebooks checkpoints
 .ipynb_checkpoints
@@ -35,3 +36,22 @@ build/
 dist/
 *.egg-info/
 .eggs/
+
+# VCS / tooling
+.git/
+.github/
+.dist/
+
+# App data not needed in image
+archive/
+notebook/
+test/
+infra/
+k8/
+
+# Local env files
+.env
+.env.copy
+
+# Local cache
+__pycache__/
