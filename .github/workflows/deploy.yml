@@ -34,6 +34,18 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          mask-password: true
+
+      - name: Validate ECR repo exists
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          aws sts get-caller-identity
+          aws ecr describe-repositories --region "$AWS_REGION" \
+            --repository-names "$ECR_REPOSITORY" \
+            --query "repositories[0].repositoryUri" --output text
 
       - name: Set Image Tag
         id: image-tag
