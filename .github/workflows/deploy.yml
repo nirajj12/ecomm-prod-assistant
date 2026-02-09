@@ -41,11 +41,28 @@ jobs:
           IMAGE_TAG="$(date +%s)"
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
           echo "tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Normalize ECR registry/repository
+        run: |
+          set -e
+          REGISTRY_INPUT="${{ secrets.ECR_REGISTRY }}"
+          REPO_INPUT="${{ secrets.ECR_REPOSITORY }}"
+
+          if [[ "$REGISTRY_INPUT" == *"/"* ]]; then
+            REGISTRY="${REGISTRY_INPUT%%/*}"
+            REPOSITORY="${REGISTRY_INPUT#*/}"
+          else
+            REGISTRY="$REGISTRY_INPUT"
+            REPOSITORY="$REPO_INPUT"
+          fi
+
+          echo "ECR_REGISTRY=$REGISTRY" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY=$REPOSITORY" >> $GITHUB_ENV
       
       - name: Validate ECR repo exists
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
         run: |
           aws sts get-caller-identity
           aws ecr describe-repositories --region "$AWS_REGION" \
@@ -55,8 +72,8 @@ jobs:
       # Build, tag and push Docker image to ECR
       - name: Build and Push Docker image
         env:
-          REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          REGISTRY: ${{ env.ECR_REGISTRY }}
+          REPOSITORY: ${{ env.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
@@ -118,8 +135,8 @@ jobs:
 
       - name: Patch deployment with new image tag
         env:
-          REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          REGISTRY: ${{ env.ECR_REGISTRY }}
+          REPOSITORY: ${{ env.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
           kubectl set image deployment/product-assistant product-assistant=$REGISTRY/$REPOSITORY:$IMAGE_TAG
