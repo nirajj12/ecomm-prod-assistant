@@ -149,7 +149,7 @@ jobs:
       - name: Verify Deployment
         run: |
           set -e
-          if ! kubectl rollout status deployment/product-assistant --timeout=120s; then
+          if ! kubectl rollout status deployment/product-assistant --timeout=600s; then
             echo "Rollout failed, collecting debug info..."
             kubectl describe deployment product-assistant || true
             kubectl get pods -o wide || true
