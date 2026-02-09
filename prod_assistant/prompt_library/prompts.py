@@ -41,8 +41,7 @@ PROMPT_REGISTRY: Dict[PromptType, PromptTemplate] = {
         - Extract the exact price from the context if available and respond using INR (₹).
         - If multiple prices exist (variants or sellers), respond with a concise price range in INR (₹).
         - If the context contains approximate pricing terms such as "starting from", "around", "expected price", or a price band, respond with an approximate price range in INR (₹).
-        - If no price or pricing signal exists in the context, say: "The price is currently unavailable in the provided information."
-        - NEVER invent prices or ranges that are not supported by the context.
+        
         STRICT OUTPUT RULES:
         - Respond in plain text only.
         - Do NOT use tables, markdown, headings, or bullet lists.
