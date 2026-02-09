@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: product-assistant
-        image: 476768693517.dkr.ecr.us-east-2.amazonaws.com/product-assistant:latest
+        image: 476768693517.dkr.ecr.us-east-1.amazonaws.com/product-assistant:latest
         ports:
         - containerPort: 8000
         env:                              
