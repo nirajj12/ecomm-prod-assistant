@@ -37,10 +37,32 @@ jobs:
         with:
           mask-password: true
 
+      - name: Normalize ECR variables
+        id: ecr-vars
+        env:
+          REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          REGISTRY="${REGISTRY:-}"
+          REPOSITORY="${REPOSITORY:-}"
+          if [[ "$REPOSITORY" == *"/"* ]]; then
+            REGISTRY_FROM_REPO="${REPOSITORY%%/*}"
+            REPO_NAME="${REPOSITORY##*/}"
+            if [[ -z "$REGISTRY" ]]; then
+              REGISTRY="$REGISTRY_FROM_REPO"
+            fi
+            REPOSITORY="$REPO_NAME"
+          fi
+          if [[ "$REGISTRY" == *"/"* ]]; then
+            REGISTRY="${REGISTRY%%/*}"
+          fi
+          echo "registry=$REGISTRY" >> "$GITHUB_OUTPUT"
+          echo "repository=$REPOSITORY" >> "$GITHUB_OUTPUT"
+
       - name: Validate ECR repo exists
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          ECR_REPOSITORY: ${{ steps.ecr-vars.outputs.repository }}
         run: |
           aws sts get-caller-identity
           aws ecr describe-repositories --region "$AWS_REGION" \
@@ -56,8 +78,8 @@ jobs:
       # Build, tag and push Docker image to ECR
       - name: Build and Push Docker image
         env:
-          REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          REGISTRY: ${{ steps.ecr-vars.outputs.registry }}
+          REPOSITORY: ${{ steps.ecr-vars.outputs.repository }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
@@ -114,8 +136,8 @@ jobs:
       # Deploy manifests
       - name: Apply Kubernetes manifests
         env:
-          REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          REGISTRY: ${{ steps.ecr-vars.outputs.registry }}
+          REPOSITORY: ${{ steps.ecr-vars.outputs.repository }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
           IMAGE="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
