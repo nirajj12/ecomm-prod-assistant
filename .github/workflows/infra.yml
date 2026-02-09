@@ -27,3 +27,7 @@ jobs:
             --template-file infra/eks-with-ecr.yaml \
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
             --region ${{ secrets.AWS_REGION }}
+            --parameter-overrides \
+              NodeInstanceType=t3.small \
+              DesiredCapacity=2 \
+              ClusterName=product-assistant-cluster-latest
