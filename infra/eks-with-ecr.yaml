@@ -6,12 +6,11 @@ Parameters:
     Type: String
     Default: product-assistant-cluster-latest
   NodeInstanceType:
-  Type: String
-  Default: t3.small   # ✅ changed
-
-DesiredCapacity:
-  Type: Number
-  Default: 1          # ✅ changed
+    Type: String
+    Default: t3.medium
+  DesiredCapacity:
+    Type: Number
+    Default: 2
   ECRRepositoryName:
     Type: String
     Default: product-assistant
@@ -169,7 +168,7 @@ Resources:
         - !Ref PublicSubnet2
       ScalingConfig:
         DesiredSize: !Ref DesiredCapacity
-        MaxSize: 2
+        MaxSize: 3
         MinSize: 1
       InstanceTypes:
         - !Ref NodeInstanceType

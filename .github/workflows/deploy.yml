@@ -36,51 +36,21 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Set Image Tag
-        run: echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
-
-      - name: Sanitize Docker vars
+        id: image-tag
         run: |
-          REGISTRY="$(echo "$REGISTRY" | tr -d '[:space:]')"
-          REPOSITORY="$(echo "$REPOSITORY" | tr -d '[:space:]')"
-          echo "REGISTRY=$REGISTRY" >> $GITHUB_ENV
-          echo "REPOSITORY=$REPOSITORY" >> $GITHUB_ENV
-        env:
-          REGISTRY: ${{ secrets.ECR_REGISTRY }}
-          REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-
-      # - name: Hard validate Docker vars
-      #   run: |
-      #     printf "REGISTRY=[%s]\n" "$REGISTRY"
-      #     printf "REPOSITORY=[%s]\n" "$REPOSITORY"
-      #     printf "IMAGE_TAG=[%s]\n" "$IMAGE_TAG"
-
-      #     [[ "$REGISTRY" =~ [[:space:]] ]] && echo "❌ REGISTRY HAS WHITESPACE" && exit 1
-      #     [[ "$REPOSITORY" =~ [[:space:]] ]] && echo "❌ REPOSITORY HAS WHITESPACE" && exit 1
-      #   env:
-      #     REGISTRY: ${{ secrets.ECR_REGISTRY }}
-      #     REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-      #     IMAGE_TAG: ${{ env.IMAGE_TAG }}
-        
-
-
-
+          echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
+          echo "::set-output name=tag::$(date +%s)"
+      
       # Build, tag and push Docker image to ECR
       - name: Build and Push Docker image
         env:
           REGISTRY: ${{ secrets.ECR_REGISTRY }}
           REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
-          set -e
-          echo "Building image..."
-          docker build \
-            -t "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}" \
-            -t "${REGISTRY}/${REPOSITORY}:latest" \
-            .
-          echo "Pushing image..."
-          docker push "${REGISTRY}/${REPOSITORY}:${IMAGE_TAG}"
-          docker push "${REGISTRY}/${REPOSITORY}:latest"
-
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -t $REGISTRY/$REPOSITORY:latest .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$REPOSITORY:latest
 
       # Setup kubectl
       - name: Setup kubectl
@@ -122,8 +92,6 @@ jobs:
       - name: Create Kubernetes secret for API keys
         run: |
           kubectl create secret generic product-assistant-secrets \
-            --from-literal=GROQ_API_KEY=${{ secrets.GROQ_API_KEY }} \
-            --from-literal=HF_TOKEN=${{ secrets.HF_TOKEN }} \
             --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
             --from-literal=GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }} \
             --from-literal=ASTRA_DB_API_ENDPOINT=${{ secrets.ASTRA_DB_API_ENDPOINT }} \
@@ -141,16 +109,16 @@ jobs:
         env:
           REGISTRY: ${{ secrets.ECR_REGISTRY }}
           REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
-          kubectl set image deployment/product-assistant \
-            product-assistant=$REGISTRY/$REPOSITORY:$IMAGE_TAG
+          kubectl set image deployment/product-assistant product-assistant=$REGISTRY/$REPOSITORY:$IMAGE_TAG
+
 
       # Verify rollout
       - name: Verify Deployment
         run: |
           set -e
-          if ! kubectl rollout status deployment/product-assistant --timeout=300s; then
+          if ! kubectl rollout status deployment/product-assistant --timeout=120s; then
             echo "Rollout failed, collecting debug info..."
             kubectl describe deployment product-assistant || true
             kubectl get pods -o wide || true
