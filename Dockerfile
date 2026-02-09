@@ -12,6 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ENV PYTHONPATH="/app:/app/prod_assistant"
+
 EXPOSE 8000
 
 # run uvicorn properly on 0.0.0.0:8000
