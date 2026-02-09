@@ -54,6 +54,11 @@ async def web_search(query: str) -> str:
 # ---------- Run Server ----------
 if __name__ == "__main__":
     # Run MCP on a different port than the main FastAPI app to avoid conflicts.
-    # FastMCP.run does not accept a host parameter; it binds to default host.
+    # FastMCP.run signature varies by MCP version. Some builds don't accept `port`.
     port = int(os.getenv("MCP_PORT", "8001"))
-    mcp.run(transport="streamable-http", port=port)
+    try:
+        mcp.run(transport="streamable-http", port=port)
+    except TypeError:
+        # Fallback for MCP versions that read port from env and don't accept `port`.
+        os.environ.setdefault("MCP_SERVER_PORT", str(port))
+        mcp.run(transport="streamable-http")
