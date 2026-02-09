@@ -10,7 +10,7 @@ Parameters:
     Default: t3.micro
   DesiredCapacity:
     Type: Number
-    Default: 2
+    Default: 1
   ECRRepositoryName:
     Type: String
     Default: product-assistant
@@ -168,7 +168,7 @@ Resources:
         - !Ref PublicSubnet2
       ScalingConfig:
         DesiredSize: !Ref DesiredCapacity
-        MaxSize: 3
+        MaxSize: 1
         MinSize: 1
       InstanceTypes:
         - !Ref NodeInstanceType

@@ -3,14 +3,13 @@ kind: Service
 metadata:
   name: product-assistant-service
 spec:
-  type: LoadBalancer
+  type: NodePort
   selector:
     app: product-assistant
   ports:
     - protocol: TCP
       port: 80
       targetPort: 8000
-
 
 
 
