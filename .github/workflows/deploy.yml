@@ -42,6 +42,16 @@ jobs:
           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
           echo "tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
       
+      - name: Validate ECR repo exists
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          aws sts get-caller-identity
+          aws ecr describe-repositories --region "$AWS_REGION" \
+            --repository-names "$ECR_REPOSITORY" \
+            --query "repositories[0].repositoryUri" --output text
+      
       # Build, tag and push Docker image to ECR
       - name: Build and Push Docker image
         env:
