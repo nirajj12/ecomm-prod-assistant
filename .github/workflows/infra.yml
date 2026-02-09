@@ -25,5 +25,6 @@ jobs:
           aws cloudformation deploy \
             --stack-name product-assistant-cluster \
             --template-file infra/eks-with-ecr.yaml \
+            --parameter-overrides ClusterName=${{ secrets.EKS_CLUSTER_NAME }} \
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
             --region ${{ secrets.AWS_REGION }}

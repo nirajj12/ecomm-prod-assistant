@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: product-assistant
-        image: 459497895986.dkr.ecr.us-west-1.amazonaws.com/product-assistant:latest
+        image: REPLACE_ME
         ports:
         - containerPort: 8000
         env:                              
@@ -45,3 +45,9 @@ spec:
             secretKeyRef:
               name: product-assistant-secrets
               key: ASTRA_DB_KEYSPACE
+        - name: FASTMCP_HOST
+          value: "0.0.0.0"
+        - name: FASTMCP_PORT
+          value: "8001"
+        - name: MCP_SERVER_URL
+          value: "http://127.0.0.1:8001/mcp"

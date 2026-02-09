@@ -39,7 +39,7 @@ jobs:
         id: image-tag
         run: |
           echo "IMAGE_TAG=$(date +%s)" >> $GITHUB_ENV
-          echo "::set-output name=tag::$(date +%s)"
+          echo "tag=$(date +%s)" >> $GITHUB_OUTPUT
       
       # Build, tag and push Docker image to ECR
       - name: Build and Push Docker image
@@ -101,17 +101,14 @@ jobs:
 
       # Deploy manifests
       - name: Apply Kubernetes manifests
-        run: |
-          kubectl apply -f k8/deployment.yaml
-          kubectl apply -f k8/service.yaml
-
-      - name: Patch deployment with new image tag
         env:
           REGISTRY: ${{ secrets.ECR_REGISTRY }}
           REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
         run: |
-          kubectl set image deployment/product-assistant product-assistant=$REGISTRY/$REPOSITORY:$IMAGE_TAG
+          IMAGE="$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          sed "s|image:.*|image: $IMAGE|" k8/deployment.yaml | kubectl apply -f -
+          kubectl apply -f k8/service.yaml
 
 
       # Verify rollout
