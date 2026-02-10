@@ -92,7 +92,15 @@ class DataIngestion:
                     "total_reviews": entry["total_reviews"],
                     "price": entry["price"]
             }
-            doc = Document(page_content=entry["top_reviews"], metadata=metadata)
+            # Include price/title/rating in content so retriever+compressor can match price queries.
+            content_parts = [
+                f"Title: {entry['product_title']}",
+                f"Price: {entry['price']}",
+                f"Rating: {entry['rating']}",
+                f"Total Reviews: {entry['total_reviews']}",
+                f"Reviews: {entry['top_reviews']}",
+            ]
+            doc = Document(page_content=" | ".join(content_parts), metadata=metadata)
             documents.append(doc)
 
         print(f"Transformed {len(documents)} documents.")
